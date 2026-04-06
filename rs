@@ -196,8 +196,7 @@ Work in the project directory. Edit files directly. Read any additional project 
             --model "$CLAUDE_MODEL" \
             --dangerously-skip-permissions \
             --system-prompt "$system_content" \
-            -p "$user_prompt" \
-            --resume
+            "$user_prompt"
     else
         "$CLAUDE_BINARY" -p \
             --model "$CLAUDE_MODEL" \
