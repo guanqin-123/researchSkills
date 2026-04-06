@@ -36,9 +36,9 @@ Fine-grained work can reveal that a coarser decision was wrong:
 
 **Rule**: When backtracking, explicitly record what failed and why. Don't silently restart — the failed branch is evidence too.
 
-### Multi-Split Analogy
+### Skipping Levels
 
-Just like MultiSplit predicts groups of neurons to split simultaneously in BaB verification, experienced researchers make **multi-level decisions at once** when the path is clear: "I know the approach (L1) AND the architecture (L2) AND the loss function (L2) — let me jump straight to implementation (L3)." This skips intermediate bound evaluations, saving time. But when uncertain, evaluate one level at a time.
+Experienced researchers make **multi-level decisions at once** when the path is clear: "I know the approach (L1) AND the architecture (L2) AND the loss function (L2) — let me jump straight to implementation (L3)." This skips intermediate bound evaluations, saving time. But when uncertain, evaluate one level at a time.
 
 ## State Machine
 
@@ -283,4 +283,4 @@ Batch: runs to completion
 You inspect changes, then run next stage (or rs next)
 ```
 
-No daemon. No state machine. No MCP. Just files + prompts + Claude.
+Just files + prompts + Claude.

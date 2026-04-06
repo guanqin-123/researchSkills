@@ -34,7 +34,7 @@ Examples:
   rs write ~/my-paper "Complete the Method section"
   rs write -p ~/my-paper "Complete the Method section"    # no questions, just do it
   rs next ~/my-paper
-  rs init ~/new-project "Multi-neuron splitting for BaB verification"
+  rs init ~/new-project "Efficient training methods for LLMs"
 
 Environment:
   RS_MODEL    Claude model (default: sonnet)

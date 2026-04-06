@@ -1,10 +1,10 @@
-# researchSkills: Distilled Research Workflow for CLI
+# researchSkills: Design Document
 
-Distilled from DeepScientist's 13 skills + 56 reference files + 730-line system prompt into a lean, CLI-first research workflow that runs directly with `claude -p`.
+A lean, CLI-first research workflow that runs directly with Claude CLI.
 
 ## Philosophy
 
-- **No daemon, no web UI, no MCP servers** — just Claude CLI + well-crafted prompts
+- **Just Claude CLI + well-crafted prompts** — no extra infrastructure
 - **Files are the state** — markdown docs in your project directory ARE the state machine
 - **You control the loop** — invoke stages manually when ready, not auto-scheduled
 - **Prompts are composable** — system prompt + stage skill + project context = one Claude invocation
@@ -54,15 +54,11 @@ researchSkills/
 - Evidence ladder (minimum → solid → maximum)
 - Cold start / curriculum strategies
 
-### What was dropped (DS infrastructure)
-- 730-line system prompt → ~100 lines
-- MCP tool contracts (memory, artifact, bash_exec)
-- Artifact state machine (paper_contract_health, bundle, outline manifests)
-- Daemon scheduling (baseline_gate, active_anchor, skill dispatch)
-- Interaction protocol (artifact.interact, reply_mode, dedupe_key)
-- Paper line / branch / worktree management
-- Connector delivery (QQ, Telegram, WeChat)
-- Process lifecycle protocol (detach/await/kill)
+### What was deliberately excluded
+- Complex state machines and artifact management
+- Daemon-based scheduling and auto-dispatch
+- Web UI and messaging platform connectors
+- Intermediate format pipelines (outline → draft → bundle)
 
 ### What was merged
 - baseline + experiment → `experiment.md` (baseline is just the first experiment)
@@ -99,13 +95,12 @@ Each stage reads your project's `brief.md`, `plan.md`, `status.md`, and `knowled
 ./rs init ~/my-new-project "Research topic description"
 ```
 
-## Key Design Difference from DeepScientist
+## Key Design Choices
 
-| Aspect | DeepScientist | researchSkills |
-|--------|---------------|----------------|
-| Invocation | `ds run write --quest-id X` | `./rs write ~/project "task"` |
-| State | daemon + artifact state machine | files in project directory |
-| Prompt | 730-line system + skill + context | ~100-line system + skill + context |
-| Paper editing | outline → draft.md → LaTeX bundle | edit .tex directly |
-| Loop control | daemon auto-schedules skills | you invoke manually |
-| Dependencies | Node.js + Python + uv + npm | just `claude` CLI |
+| Aspect | Choice | Why |
+|--------|--------|-----|
+| State management | Plain markdown files | No infrastructure to maintain |
+| Paper editing | Edit .tex directly | No intermediate format overhead |
+| Loop control | User invokes stages manually | Full control over research direction |
+| Dependencies | Just Claude CLI | Minimal setup |
+| Prompt size | ~100-line system + stage skill | Maximizes context for actual work |

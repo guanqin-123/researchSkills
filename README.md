@@ -12,7 +12,7 @@ That's it. No Node.js, no Python, no daemon, no web server.
 
 ```bash
 # 1. Initialize a project
-./rs init ~/my-paper "Learned multi-neuron branching for BaB verification"
+./rs init ~/my-paper "Efficient training methods for large language models"
 
 # 2. Edit brief.md with your research context
 vim ~/my-paper/brief.md
@@ -95,7 +95,7 @@ Use `-p` for batch mode when the task is unambiguous.
 └── figures/
 ```
 
-No database. No daemon state. `status.md` IS the state machine. `workspaces.md` IS the repo registry. `experiments/runs.md` IS the experiment tracker.
+All state lives in plain markdown files. Nothing else to manage.
 
 ### Multi-Repo Projects
 
@@ -104,18 +104,18 @@ Register all codebases in `workspaces.md`:
 ```markdown
 | ID | Role | Path | Branch | Notes |
 |----|------|------|--------|-------|
-| `abcrown` | baseline-framework | ~/repos/alpha-beta-CROWN | main | BaB verifier |
-| `multisplit` | our-method | ~/repos/multisplit | dev | predictor impl |
-| `vnncomp` | data | ~/data/vnncomp2024 | main | benchmarks |
+| `baseline` | baseline-framework | ~/repos/baseline-model | main | reference implementation |
+| `ours` | our-method | ~/repos/our-method | dev | proposed approach |
+| `data` | data | ~/data/benchmarks | main | evaluation datasets |
 ```
 
 Every experiment run in `experiments/runs.md` links back to a repo + commit:
 
 ```markdown
-### run-003: MultiSplit vs FSB on ACAS Xu
-- **Repo**: `abcrown` @ `dev-multisplit` @ `a3f2c1d`
-- **Command**: `python abcrown.py --config exp/acasxu_multisplit.yaml`
-- **Result**: verified 42/45 in 180s (FSB: 42/45 in 340s)
+### run-003: Ours vs baseline on benchmark-A
+- **Repo**: `ours` @ `dev` @ `a3f2c1d`
+- **Command**: `python train.py --config configs/main_exp.yaml`
+- **Result**: accuracy 94.2% (baseline: 91.8%)
 ```
 
 ## Typical Workflows
@@ -123,10 +123,10 @@ Every experiment run in `experiments/runs.md` links back to a repo + commit:
 ### Writing a paper (you have an idea, need to write + experiment)
 
 ```bash
-./rs scout ~/paper "Survey multi-neuron branching methods"
-./rs idea ~/paper "Formalize the predictor architecture"
+./rs scout ~/paper "Survey related work and strongest baselines"
+./rs idea ~/paper "Formalize the method and select architecture"
 ./rs write ~/paper "Draft Method and Training sections"
-./rs experiment ~/paper "Run main comparison on VNN-COMP"
+./rs experiment ~/paper "Run main comparison on standard benchmarks"
 ./rs write ~/paper "Fill in Experiment section with results"
 ./rs review ~/paper "Full review before NeurIPS submission"
 ```

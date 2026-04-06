@@ -11,9 +11,9 @@ Registry of all codebases, tools, and data involved in this project.
 | `paper` | paper | ./paper | — | main | LaTeX source |
 
 <!-- Example entries:
-| `abcrown` | baseline-framework | ~/repos/alpha-beta-CROWN | https://github.com/Verified-Intelligence/alpha-beta-CROWN | main | BaB verification framework |
-| `multisplit` | our-method | ~/repos/multisplit | (private) | dev | MultiSplit predictor implementation |
-| `vnncomp` | data | ~/data/vnncomp2024 | https://github.com/ChristopherBrix/vnncomp2024_benchmarks | main | Benchmark models + specs |
+| `baseline` | baseline-framework | ~/repos/baseline | https://github.com/org/baseline | main | reference implementation |
+| `ours` | our-method | ~/repos/our-method | (private) | dev | proposed approach |
+| `data` | data | ~/data/benchmarks | https://github.com/org/benchmarks | main | evaluation datasets |
 -->
 
 ## Environments
@@ -23,23 +23,12 @@ Registry of all codebases, tools, and data involved in this project.
 | Repo ID | Setup command | Python | GPU required | Notes |
 |---------|-------------|--------|-------------|-------|
 
-<!-- Example:
-| `abcrown` | `cd ~/repos/alpha-beta-CROWN && pip install -e .` | 3.10 | yes | needs CUDA 12+ |
-| `multisplit` | `cd ~/repos/multisplit && uv sync` | 3.11 | yes | |
--->
-
 ## Data & Assets
 
 <!-- Datasets, pretrained models, checkpoints shared across repos. -->
 
 | ID | Type | Path | Source | Size | Notes |
 |----|------|------|--------|------|-------|
-
-<!-- Example:
-| `acasxu` | benchmark | ~/data/vnncomp/acasxu | VNN-COMP 2024 | 50MB | 45 networks, 10 properties |
-| `mnist-fc` | benchmark | ~/data/vnncomp/mnist_fc | VNN-COMP 2024 | 200MB | |
-| `predictor-ckpt` | checkpoint | ./experiments/checkpoints/ | trained locally | — | MultiSplit predictor weights |
--->
 
 ## Cross-Repo Dependencies
 
@@ -48,9 +37,9 @@ Registry of all codebases, tools, and data involved in this project.
 ```
 paper ← results from experiments
   ↑
-experiments (run in abcrown + multisplit)
+experiments (run in baseline + ours)
   ↑
-multisplit → patches/integrates into abcrown
+ours → integrates with baseline framework
   ↑
-abcrown ← vnncomp benchmarks as data
+baseline ← benchmark data
 ```
