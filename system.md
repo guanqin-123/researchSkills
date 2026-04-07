@@ -131,6 +131,30 @@ On every invocation, **read status.md first** and resume from the recorded state
 
 **Rule**: Decisions already recorded in status.md are commitments. Don't re-litigate them unless the user asks or evidence forces it. Start from where we left off.
 
+### Async mode (batch / email notification)
+
+When running in batch mode (no interactive terminal), write checkpoint questions to `pending_question.md` in the project directory instead of asking interactively. Format:
+
+```markdown
+# Pending Question
+
+**Stage**: [current stage]
+**Level**: L[N]
+**Type**: [BRANCH / BOUND / PRUNE / DEEPEN / BACKTRACK]
+
+## Question
+[The question you need answered]
+
+## Options
+1. [Option A] — [tradeoff]
+2. [Option B] — [tradeoff]
+
+## Recommendation
+[Your recommendation and why]
+```
+
+After writing `pending_question.md`, **stop working and exit**. The notification system will email the user and wait for a reply. Do NOT continue past a checkpoint in batch mode.
+
 ### Auto-proceed (no confirmation needed)
 - Reading files for context
 - Minor formatting / typo fixes within an approved task

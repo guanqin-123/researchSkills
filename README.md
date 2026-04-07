@@ -157,6 +157,40 @@ RS_REFS="reviewer-first-writing,paper-section-playbook" ./rs write ~/paper "Draf
 
 Available references: `rs refs`
 
+## Email Notifications (Autonomous Mode)
+
+Run research stages unattended. Claude emails you when it needs a decision, waits for your reply, then continues.
+
+### Setup
+
+```bash
+cp notify/config.env.example notify/config.env
+vim notify/config.env    # fill in your Gmail App Password
+```
+
+### Usage
+
+```bash
+# Single stage with email notification
+./rs-auto scout ~/my-paper "Survey related work"
+
+# Autonomous loop — runs continuously, emails you at checkpoints
+tmux new -s research
+./rs-auto loop ~/my-paper
+```
+
+### How it works
+
+```
+rs-auto runs Claude in batch mode
+  → Claude hits a checkpoint → writes pending_question.md → stops
+  → rs-auto emails you the question
+  → rs-auto polls your inbox for a reply (every 60s)
+  → You reply to the email from your phone/laptop
+  → rs-auto feeds your reply to the next stage
+  → Loop continues
+```
+
 ## Configuration
 
 | Env var | Default | What |

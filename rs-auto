@@ -1,0 +1,132 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+NOTIFY="$SCRIPT_DIR/notify/rs-notify.py"
+POLL="$SCRIPT_DIR/notify/rs-poll.py"
+RS="$SCRIPT_DIR/rs"
+
+usage() {
+    cat <<'EOF'
+rs-auto - Autonomous research loop with email notifications
+
+Usage:
+  rs-auto <stage> <project_dir> "task"
+  rs-auto loop <project_dir>               Continuous loop: run → ask → wait → run
+
+The loop:
+  1. Run stage in batch mode
+  2. If pending_question.md has content → email you
+  3. Wait for your email reply
+  4. Feed reply into next stage
+  5. Repeat
+
+First run: edit notify/config.env with your Gmail App Password.
+
+Examples:
+  rs-auto scout ~/my-paper "Survey related work"
+  rs-auto loop ~/my-paper
+EOF
+    exit 0
+}
+
+run_stage() {
+    local stage="$1"
+    local project_dir="$2"
+    local task="$3"
+
+    echo "[rs-auto] Running: rs $stage $project_dir"
+    echo "[rs-auto] Task: $task"
+
+    rm -f "$project_dir/pending_question.md" "$project_dir/reply.md"
+
+    "$RS" "$stage" -p "$project_dir" "$task"
+
+    if [ -s "$project_dir/pending_question.md" ]; then
+        echo "[rs-auto] Question pending. Sending email..."
+        python3 "$NOTIFY" "$project_dir"
+        echo "[rs-auto] Waiting for email reply..."
+        python3 "$POLL" "$project_dir"
+        echo "[rs-auto] Reply received."
+        return 0
+    else
+        echo "[rs-auto] Stage completed, no questions."
+        return 1
+    fi
+}
+
+cmd_single() {
+    local stage="$1"
+    local project_dir="$2"
+    local task="$3"
+
+    run_stage "$stage" "$project_dir" "$task"
+
+    if [ -s "$project_dir/reply.md" ]; then
+        local reply
+        reply=$(cat "$project_dir/reply.md")
+        echo "[rs-auto] Continuing with your reply..."
+        "$RS" "$stage" -p "$project_dir" "User replied: $reply. Continue the previous task."
+    fi
+}
+
+cmd_loop() {
+    local project_dir="$1"
+    local round=1
+
+    echo "[rs-auto] Starting autonomous loop on $(basename "$project_dir")"
+    echo "[rs-auto] Will email you at decisions, wait for reply, then continue."
+    echo "---"
+
+    while true; do
+        echo "[rs-auto] === Round $round ==="
+
+        local task="Read status.md. Continue from where we left off. If you need a decision, write the question to pending_question.md and stop."
+
+        if [ -s "$project_dir/reply.md" ]; then
+            local reply
+            reply=$(cat "$project_dir/reply.md")
+            task="User replied: $reply. Continue with this answer. If you need another decision, write to pending_question.md and stop."
+            rm -f "$project_dir/reply.md"
+        fi
+
+        rm -f "$project_dir/pending_question.md"
+
+        "$RS" decision -p "$project_dir" "$task" || true
+
+        if [ -s "$project_dir/pending_question.md" ]; then
+            echo "[rs-auto] Question pending. Sending email..."
+            python3 "$NOTIFY" "$project_dir"
+            echo "[rs-auto] Waiting for email reply..."
+            python3 "$POLL" "$project_dir"
+            echo "[rs-auto] Reply received. Continuing..."
+        else
+            local next_stage
+            next_stage=$(grep -oP '(?<=rs )\w+' "$project_dir/status.md" 2>/dev/null | tail -1 || echo "decision")
+
+            if [ "$next_stage" = "decision" ] || [ -z "$next_stage" ]; then
+                echo "[rs-auto] No clear next stage. Sending status email and pausing."
+                echo "Autonomous loop completed round $round. No pending question and no clear next stage. Run 'rs catchup' to review." > "$project_dir/pending_question.md"
+                python3 "$NOTIFY" "$project_dir"
+                python3 "$POLL" "$project_dir"
+            else
+                echo "[rs-auto] Running next stage: $next_stage"
+                "$RS" "$next_stage" -p "$project_dir" "Continue from status.md. If you need a decision, write to pending_question.md and stop." || true
+            fi
+        fi
+
+        round=$((round + 1))
+    done
+}
+
+case "${1:-}" in
+    help|--help|-h|"")
+        usage
+        ;;
+    loop)
+        cmd_loop "${2:?Usage: rs-auto loop <project_dir>}"
+        ;;
+    *)
+        cmd_single "${1}" "${2:?Usage: rs-auto <stage> <project_dir> \"task\"}" "${3:?Usage: rs-auto <stage> <project_dir> \"task\"}"
+        ;;
+esac
