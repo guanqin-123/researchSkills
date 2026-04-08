@@ -62,3 +62,7 @@ When experiments span multiple repos (e.g., implement in repo A, evaluate in rep
 ## Output
 
 Update `status.md` with results. Record key numbers in `knowledge/` cards. Update `plan.md` to reflect what's done. **Append to `experiments/runs.md`** with full reproducibility info.
+
+## Autopilot Mode
+
+For autonomous experiment loops with automated keep/discard decisions based on a quantitative metric, use the `autopilot` stage instead. Configure with `autopilot.md` and run via `rs-auto autopilot <project_dir>`.

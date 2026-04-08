@@ -13,6 +13,7 @@ rs-auto - Autonomous research loop with email notifications
 Usage:
   rs-auto <stage> <project_dir> "task"
   rs-auto loop <project_dir>               Continuous loop: run → ask → wait → run
+  rs-auto autopilot <project_dir>          Autonomous experiment loop (LOOP FOREVER)
 
 The loop:
   1. Run stage in batch mode
@@ -21,11 +22,18 @@ The loop:
   4. Feed reply into next stage
   5. Repeat
 
+Autopilot mode:
+  Claude runs experiments in a tight autonomous loop (modify → run → measure
+  → keep/discard). Only emails you for strategic decisions (L0-L2 changes,
+  pivot, stop). Configure metric/threshold in <project_dir>/autopilot.md.
+  Setup: rs init-autopilot <project_dir>
+
 First run: edit notify/config.env with your Gmail App Password.
 
 Examples:
   rs-auto scout ~/my-paper "Survey related work"
   rs-auto loop ~/my-paper
+  rs-auto autopilot ~/my-paper
 EOF
     exit 0
 }
@@ -119,12 +127,130 @@ cmd_loop() {
     done
 }
 
+parse_config() {
+    local file="$1"
+    local key="$2"
+    grep "^\- \*\*${key}\*\*:" "$file" | sed 's/.*: //'
+}
+
+cmd_autopilot() {
+    local project_dir="$1"
+    local config="$project_dir/autopilot.md"
+
+    # Validate config exists
+    if [ ! -f "$config" ]; then
+        echo "[autopilot] ERROR: No autopilot.md found in $project_dir"
+        echo "[autopilot] Run: rs init-autopilot $project_dir"
+        exit 1
+    fi
+
+    # Parse config
+    local metric_name
+    metric_name=$(parse_config "$config" "name")
+    local direction
+    direction=$(parse_config "$config" "direction")
+    local threshold
+    threshold=$(parse_config "$config" "threshold")
+    local branch_prefix
+    branch_prefix=$(parse_config "$config" "branch_prefix")
+    local experiment_repo
+    experiment_repo=$(parse_config "$config" "experiment_repo")
+
+    # Resolve "." to project_dir
+    if [ "$experiment_repo" = "." ]; then
+        experiment_repo="$project_dir"
+    fi
+
+    # Initialize results.tsv if absent
+    local results_file="$project_dir/experiments/results.tsv"
+    mkdir -p "$project_dir/experiments"
+    if [ ! -f "$results_file" ]; then
+        printf "run_id\tcommit\tmetric_value\tprev_best\tstatus\tdescription\ttimestamp\n" > "$results_file"
+    fi
+
+    echo "[autopilot] Starting on $(basename "$project_dir")"
+    echo "[autopilot] Metric: $metric_name ($direction, threshold=$threshold)"
+    echo "[autopilot] Experiment repo: $experiment_repo"
+    echo "---"
+
+    # Git safety: create autopilot branch + start tag
+    local tag="autopilot-$(date +%Y%m%d-%H%M%S)"
+    if [ -d "$experiment_repo/.git" ]; then
+        (cd "$experiment_repo" && git checkout -b "${branch_prefix}/${tag}" 2>/dev/null || true)
+        (cd "$experiment_repo" && git tag "${tag}-start" 2>/dev/null || true)
+        echo "[autopilot] Git safety: branch=${branch_prefix}/${tag}, tag=${tag}-start"
+    else
+        echo "[autopilot] WARNING: $experiment_repo is not a git repo. Git safety disabled."
+    fi
+
+    # Main loop: launch Claude, handle escalation, re-launch
+    local session=1
+    while true; do
+        echo "[autopilot] === Session $session ==="
+        rm -f "$project_dir/pending_question.md"
+
+        local task
+        if [ -s "$project_dir/reply.md" ]; then
+            local reply
+            reply=$(cat "$project_dir/reply.md")
+            rm -f "$project_dir/reply.md"
+            task="AUTOPILOT MODE — resuming after strategic decision.
+User answered: $reply
+Incorporate this decision and resume the autonomous experiment loop.
+Config in autopilot.md. Metric: $metric_name ($direction, threshold=$threshold).
+Do NOT stop to ask questions unless it's a strategic L0-L2 decision.
+If strategic: write pending_question.md and exit.
+Otherwise: LOOP FOREVER (modify → commit → run → measure → keep/discard)."
+        else
+            task="AUTOPILOT MODE — enter the autonomous experiment loop.
+Config in autopilot.md. Metric: $metric_name ($direction, threshold=$threshold).
+Do NOT stop to ask questions unless it's a strategic L0-L2 decision.
+If strategic: write pending_question.md and exit.
+Otherwise: LOOP FOREVER (modify → commit → run → measure → keep/discard).
+If results.tsv has no data rows, your first run is the baseline: run the code as-is."
+        fi
+
+        # Launch Claude with autopilot stage in batch mode
+        "$RS" autopilot -p "$project_dir" "$task" || true
+
+        # Git safety: tag after each session
+        if [ -d "$experiment_repo/.git" ]; then
+            (cd "$experiment_repo" && git tag "${tag}-session${session}" 2>/dev/null || true)
+        fi
+
+        # Check for escalation
+        if [ -s "$project_dir/pending_question.md" ]; then
+            echo "[autopilot] Strategic decision needed. Sending email..."
+            python3 "$NOTIFY" "$project_dir"
+            echo "[autopilot] Waiting for email reply..."
+            python3 "$POLL" "$project_dir"
+            echo "[autopilot] Reply received. Resuming..."
+        else
+            echo "[autopilot] Claude exited without escalation. Autopilot complete."
+            break
+        fi
+
+        session=$((session + 1))
+    done
+
+    # Git safety: tag final state
+    if [ -d "$experiment_repo/.git" ]; then
+        (cd "$experiment_repo" && git tag "${tag}-end" 2>/dev/null || true)
+        echo "[autopilot] Git safety: tagged ${tag}-end"
+    fi
+
+    echo "[autopilot] Done. Review experiments/results.tsv for full trajectory."
+}
+
 case "${1:-}" in
     help|--help|-h|"")
         usage
         ;;
     loop)
         cmd_loop "${2:?Usage: rs-auto loop <project_dir>}"
+        ;;
+    autopilot)
+        cmd_autopilot "${2:?Usage: rs-auto autopilot <project_dir>}"
         ;;
     *)
         cmd_single "${1}" "${2:?Usage: rs-auto <stage> <project_dir> \"task\"}" "${3:?Usage: rs-auto <stage> <project_dir> \"task\"}"
