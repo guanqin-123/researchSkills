@@ -20,6 +20,7 @@ Usage:
   rs next <project_dir>                  Route: what stage should I run next?
   rs catchup <project_dir>               Catch up: structured briefing on project state
   rs init <project_dir> "topic"          Initialize a new project
+  rs init-autopilot <project_dir>        Add autopilot config to a project
   rs list                                List available stages
   rs refs                                List available references
   rs status <project_dir>                Show project status
@@ -238,6 +239,24 @@ case "${1:-}" in
         ;;
     init)
         cmd_init "${2:?Usage: rs init <project_dir> [topic]}" "${3:-Research project}"
+        ;;
+    init-autopilot)
+        dir="${2:?Usage: rs init-autopilot <project_dir>}"
+        if [ ! -f "$dir/autopilot.md" ]; then
+            if [ ! -d "$dir" ]; then
+                echo "Error: Directory '$dir' does not exist. Run 'rs init' first."
+                exit 1
+            fi
+            cp "$TEMPLATES_DIR/autopilot.md" "$dir/autopilot.md"
+            mkdir -p "$dir/experiments"
+            if [ ! -f "$dir/experiments/results.tsv" ]; then
+                printf "run_id\tcommit\tmetric_value\tprev_best\tstatus\tdescription\ttimestamp\n" > "$dir/experiments/results.tsv"
+            fi
+            echo "Created $dir/autopilot.md"
+            echo "Next: edit autopilot.md (metric, command, threshold), then run: rs-auto autopilot $dir"
+        else
+            echo "autopilot.md already exists in $dir"
+        fi
         ;;
     status)
         cmd_status "${2:?Usage: rs status <project_dir>}"

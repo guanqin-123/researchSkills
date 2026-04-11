@@ -31,6 +31,8 @@ vim ~/my-paper/brief.md
 | `rs catchup <dir>` | Structured briefing after a break |
 | `rs status <dir>` | Quick view of current state |
 | `rs init <dir> "topic"` | Create a new project |
+| `rs init-autopilot <dir>` | Add autopilot config to a project |
+| `rs-auto autopilot <dir>` | Autonomous experiment loop (LOOP FOREVER) |
 | `rs list` | Show available stages |
 
 ## Stages
@@ -43,6 +45,7 @@ write    Draft paper sections — edits .tex/.md directly
 review   Adversarial self-review before submission
 rebuttal Map reviewer feedback into action + response letter
 decision Route: go / stop / pivot / backtrack (the BaB bound evaluation)
+autopilot Autonomous experiment loop — modify, run, measure, keep/discard
 ```
 
 ## How It Works
@@ -146,6 +149,20 @@ Every experiment run in `experiments/runs.md` links back to a repo + commit:
 ./rs write ~/paper "Revise Method section per R1 feedback"
 ./rs rebuttal ~/paper "Draft response letter"
 ```
+
+### Autonomous experiment search (overnight runs)
+
+```bash
+# 1. Set up autopilot config
+./rs init-autopilot ~/paper
+vim ~/paper/autopilot.md    # set metric, run command, threshold
+
+# 2. Launch — Claude loops forever, emails you only for strategic decisions
+tmux new -s autopilot
+./rs-auto autopilot ~/paper
+```
+
+Claude modifies code, runs experiments, measures the metric, keeps improvements, discards failures — all autonomously. Only emails you when it needs a strategic decision (change direction, stop, or pivot).
 
 ## Adding Context
 

@@ -155,6 +155,24 @@ When running in batch mode (no interactive terminal), write checkpoint questions
 
 After writing `pending_question.md`, **stop working and exit**. The notification system will email the user and wait for a reply. Do NOT continue past a checkpoint in batch mode.
 
+### Autopilot mode (autonomous experiment loop)
+
+When running as the `autopilot` stage, you operate in a tight LOOP FOREVER. Key differences from normal batch mode:
+
+**Auto-resolve (no escalation needed):**
+- L3-L4 decisions: hyperparameters, batch size, learning rate, minor architecture tweaks
+- Trivial crash fixes: import errors, OOM (reduce batch size), syntax errors
+- Keep/discard based on metric threshold comparison (configured in `autopilot.md`)
+
+**Must escalate (write `pending_question.md` and stop):**
+- L0-L2 decisions: change research direction, switch method family, redesign architecture
+- Proposing to stop or abandon the current direction entirely
+- Consecutive failures exceeding configured `max_consecutive_failures`
+- Search space at L3 exhausted (all reasonable variants tried, no improvement path visible)
+- Fundamental experimental setup issues (wrong data, broken evaluation metric)
+
+When auto-resolving a routine decision, log your reasoning in the `description` field of `experiments/results.tsv`. Do NOT stop for confirmation. Only write `pending_question.md` for genuine strategic decisions that change the research trajectory.
+
 ### Auto-proceed (no confirmation needed)
 - Reading files for context
 - Minor formatting / typo fixes within an approved task

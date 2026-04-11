@@ -22,7 +22,8 @@ researchSkills/
 │   ├── write.md                 # Paper drafting (edit existing .tex directly)
 │   ├── review.md                # Self-review as adversarial reviewer
 │   ├── rebuttal.md              # Reviewer response mapping
-│   └── decision.md              # Go/stop/branch/pivot routing
+│   ├── decision.md              # Go/stop/branch/pivot routing
+│   └── autopilot.md             # Autonomous experiment loop (LOOP FOREVER)
 ├── references/                  # Reusable research heuristics (standalone)
 │   ├── paper-section-playbook.md
 │   ├── reviewer-first-writing.md
@@ -35,8 +36,13 @@ researchSkills/
 │       ├── brief.md             # Research brief template
 │       ├── plan.md              # Plan template
 │       ├── status.md            # Status template
+│       ├── autopilot.md         # Autopilot config template
+│       ├── experiments/
+│       │   ├── runs.md          # Experiment run log template
+│       │   └── results.tsv      # Machine-readable results template
 │       └── knowledge/           # Knowledge cards directory
-└── rs                           # CLI helper script
+├── rs                           # CLI helper script
+└── rs-auto                      # Autonomous mode wrapper (email + autopilot)
 ```
 
 ## Distillation Decisions
@@ -104,3 +110,24 @@ Each stage reads your project's `brief.md`, `plan.md`, `status.md`, and `knowled
 | Loop control | User invokes stages manually | Full control over research direction |
 | Dependencies | Just Claude CLI | Minimal setup |
 | Prompt size | ~100-line system + stage skill | Maximizes context for actual work |
+| Autopilot | Claude LOOP FOREVER in single session | Tight experiment loop, minimal overhead |
+| Autopilot git | Bash safety net (tags/branches) | Claude does git ops, bash provides recovery |
+| Autopilot escalation | Prompt-defined rules, not bash parsing | Claude only writes pending_question.md for L0-L2 |
+
+## Autopilot Mode
+
+Inspired by [karpathy/autoresearch](https://github.com/karpathy/autoresearch). Adds an autonomous experiment loop where Claude modifies code, runs experiments, measures a quantitative metric, and makes automated keep/discard decisions.
+
+### How it differs from `rs-auto loop`
+
+| Aspect | `rs-auto loop` | `rs-auto autopilot` |
+|--------|----------------|---------------------|
+| Escalation | Every checkpoint emails user | Only strategic (L0-L2) decisions email |
+| Loop driver | Bash outer loop, one `rs` call per round | Claude inner loop (LOOP FOREVER) |
+| Decision making | User decides at every checkpoint | Automated keep/discard via metric threshold |
+| Git safety | None | Bash creates branch + tags before/after sessions |
+| Results format | `runs.md` only | `results.tsv` (machine-readable) + `runs.md` |
+
+### Configuration
+
+Per-project `autopilot.md` defines: metric name, direction (higher/lower is better), improvement threshold, run command, timeout, max rounds, and max consecutive failures. Parsed by bash via simple `grep`/`sed` — no YAML dependency.
